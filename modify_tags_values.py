@@ -3,74 +3,63 @@ import xml.etree.ElementTree as ET
 
 directory = "/Users/ausoto/code/na-salesforce/force-app/main/default/objects/ContactArchive__c/fields"
 nameSpace = "http://soap.sforce.com/2006/04/metadata"
+ET.register_namespace("", nameSpace)
 for _root, dirs, files in os.walk(directory):
     for field in files:
         filePath = directory + "/" + field
         _tree = ET.parse(filePath)
         _root = _tree.getroot()
-        # attributesToUpdate = []
         for fieldAttribute in _root:
-            # delete extension
+            # select tagName
             xmlTagName = fieldAttribute.tag[41 : len(fieldAttribute.tag)]
 
             ## updates trackhistory tag to false
 
-            # if xmlTagName == "trackHistory":
-            #     print(field)
-            #     fieldAttribute.text = "false"
-            #     print(f"File {field} has been updated trackHistory to false")
-            # _tree.write(filePath, "UTF-8", True, nameSpace)
+            if xmlTagName == "trackHistory" and fieldAttribute.text == "true":
+                fieldAttribute.text = "false"
+                print(f"File {field} has been updated trackHistory to false")
+                # save
+                _tree.write(filePath, "UTF-8", True, nameSpace)
 
             ## updates type tag to text when it's a lookup
 
-            if field.__contains__("Region__c"):
-                if xmlTagName == "type" and fieldAttribute.text == "Lookup":
-                    print(field)
-                    fieldAttribute.text = "Text"
-                    print(f"File {fieldAttribute.text} has been updated Lookup to Text")
+            if xmlTagName == "type" and fieldAttribute.text == "Lookup":
+                fieldAttribute.text = "Text"
+                print(
+                    f"File {fieldAttribute.text} has been updated Lookup to Text at {field}"
+                )
 
-                    custom_field = _root.find("CustomField", nameSpace)
-                    custom_field = _root.find(
-                    "{http://soap.sforce.com/2006/04/metadata}CustomField"
+                # add length tag
+                if not xmlTagName.__contains__("length"):
+                    length_tag = ET.SubElement(
+                        _root, "{{{}}}{}".format(nameSpace, "length")
                     )
-                    print('customfield',custom_field)
-                    # Create a new element
-                    print('_root',_root)
-                    print("_tree", _tree)
-                    print("field", field)
+                    length_tag.text = "255"
 
-                    length_255 = ET.SubElement(_root,"length")
-                    length_255.text = '255'
-                    print('length_255',length_255)
-                    print("length_255.tag", length_255.tag)
-                    print("length_255.text", length_255.text)
+                    # Create a namespace map
+                    nsmap = {"length": nameSpace}
 
-                    is_length_255 = field.find.Element('isLength')
-                    print(is_length_255)
-
-                    # _root.append(length_255)
-                    # _tree.SubElement(fieldAttribute, "length").text = "255"
-                    # lenght_255 = makeelement("length": "255")¶
-                    # fieldAttribute.append()
+                    # Serialize the XML with the namespace map
+                    ET.tostring(_root, encoding="utf-8", xml_declaration=True)
                     print(f"<length> of 255 has been added to {field}")
+                    # save
+                    _tree.write(filePath, "UTF-8", True, nameSpace)
 
-                #     _tree.write(filePath, "UTF-8", True, nameSpace)
+            ## deletes tags from lookup
 
-                ## deletes tags from lookup
+            if (
+                xmlTagName == "relationshipLabel"
+                or xmlTagName == "deleteConstraint"
+                or xmlTagName == "referenceTo"
+                or xmlTagName == "relationshipName"
+                or xmlTagName == "lookupFilter"
+            ):
+                _root.remove(fieldAttribute)
+                print(f"<{xmlTagName}> attribute has been deleted at {field}")
+                _tree.write(filePath, "UTF-8", True, nameSpace)
 
-                # if (
-                #     xmlTagName == "deleteConstraint"
-                #     or xmlTagName == "relationshipLabel"
-                #     or xmlTagName == "referenceTo"
-                #     or xmlTagName == "relationshipName"
-                # ):
-                #     _root.remove(fieldAttribute)
-                #     print(
-                #         f"{fieldAttribute.tag} attribute has been deleted"
-                #     )
-
-## save file
-        # _tree.write(filePath, "UTF-8", True, nameSpace)
+        # save
+        _tree.write(filePath, "UTF-8", True, nameSpace)
 
 ## formula will not be migrated
 
