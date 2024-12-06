@@ -1,5 +1,9 @@
+# this script is used to move fields from the fields folder to the corresponding folders
+# formula, managed_packaged, standard, leaving custom__c 'fields' folder, lookup, in that order
+# is supposed to be ran before modify_tags_values.py
 import os
 import shutil
+import time
 import xml.etree.ElementTree as ET
 
 # Define the paths
@@ -47,7 +51,7 @@ for filename in os.listdir(fields_folder):
         tree = ET.parse(file_path)
         root = tree.getroot()
 
-        # move formula
+        ## ! move fields containing <formula> tag
 
         # Check if the file contains a <formula> tag
         formula_tag = root.find("{http://soap.sforce.com/2006/04/metadata}formula")
@@ -59,12 +63,13 @@ for filename in os.listdir(fields_folder):
 
             # Move the file to the formula folder
             shutil.move(file_path, os.path.join(formula_folder, filename))
+            print(f"File {filename} has been moved to formula_folder")
 
             # Add the file and its type to the report content
             report_content.append(f"{filename}, Formula ({field_type})")
             continue
 
-        # move managed packaged
+        ## ! move managed packaged
 
         # delete __c.field-meta.xml
         without_file_extension_c = filename[0:-18]
@@ -72,36 +77,40 @@ for filename in os.listdir(fields_folder):
             moved_managed_packaged_files += 1
             #   Move the file to the formula folder
             shutil.move(file_path, os.path.join(managed_packaged_folder, filename))
+            print(f"File {filename} has been moved to managed_packaged_folder")
 
             # Add the file and its type to the report content
             report_content.append(f"{filename}, Managed package")
             continue
 
-        # move standard fields
+        ## ! move standard fields
 
-        #delete .field-meta.xml
+        # delete .field-meta.xml
         without_file_extension = filename[0:-15]
         if not without_file_extension.__contains__("__c"):
             moved_standard_files += 1
             shutil.move(file_path, os.path.join(standard_folder, filename))
+            print(f"File {filename} has been moved to standard_folder")
             # Add the file and its type to the report content
             report_content.append(f"{filename}, Standard")
             continue
 
-        # Move lookup
+            ## ! Move fields containing <lookup> tag
 
-        # Check if the file contains a <formula> tag
-        # type_tag = root.find("{http://soap.sforce.com/2006/04/metadata}type")
-        # if type_tag is not None and type_tag.text == "Lookup":
-        #     moved_lookup_files += 1
-        #     # Move the file to the formula folder
-        #     shutil.move(file_path, os.path.join(lookup_folder, filename))
+            # # Check if the file contains a <formula> tag
+            # type_tag = root.find("{http://soap.sforce.com/2006/04/metadata}type")
+            # if type_tag is not None and type_tag.text == "Lookup":
+            #     moved_lookup_files += 1
+            #     # Move the file to the formula folder
+            #     shutil.move(file_path, os.path.join(lookup_folder, filename))
+            #     print(f"File {filename} has been moved to lookup_folder")
 
-        #     # Add the file and its type to the report content
-        #     report_content.append(f"{filename}, Lookup")
-        #     continue
+            #     # Add the file and its type to the report content
+            #     report_content.append(f"{filename}, Lookup")
+            #     continue
 
-        # count custom?????
+        ## ! else it's a custom field
+        report_content.append(f"{filename}, custom_field__c")
 
 
 # Calculate the number of files that are not formula fields
@@ -143,3 +152,8 @@ with open(report_file, "w") as f:
 print(
     f"A report with statistics has been generated in '{report_file}'."
 )
+time.sleep(1)
+print("Executing Python script... modify_tags_values.py")
+time.sleep(1)
+# execute the second script
+os.system("/usr/bin/python3 /Users/ausoto/code/field-migrator/modify_tags_values.py")
