@@ -65,7 +65,7 @@ for root, dirs, files in os.walk(start_directory):
             if xmlTagName == "fullName" and fieldAttribute.text[:-18].__contains__(
                 "__"
             ):
-                fieldAttribute.text = new_filename_managed_package
+                fieldAttribute.text = new_filename_managed_package[:-15]
                 print(
                     f"🟧<fullName> tag for manage_packaged field {field} has been updated to {fieldAttribute.text}"
                 )
