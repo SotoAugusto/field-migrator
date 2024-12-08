@@ -149,11 +149,14 @@ with open(report_file, "w") as f:
 # print(
 #     f"Files containing <lookup> tags have been moved to '{lookup_folder}' and a report with statistics has been generated in '{report_file}'."
 # )
-print(
-    f"A report with statistics has been generated in '{report_file}'."
-)
-time.sleep(1)
+print(f"A report with statistics has been generated in '{report_file}'.")
 print("Executing Python script... modify_tags_values.py")
-time.sleep(1)
-# execute the second script
+# execute the second script first time
 os.system("/usr/bin/python3 /Users/ausoto/code/field-migrator/modify_tags_values.py")
+# execute the second script second time
+os.system("/usr/bin/python3 /Users/ausoto/code/field-migrator/modify_tags_values.py")
+# execute the second script third time
+os.system("/usr/bin/python3 /Users/ausoto/code/field-migrator/modify_tags_values.py")
+os.system(
+    "/usr/bin/python3 /Users/ausoto/code/field-migrator/simple-package-generator.py"
+)
