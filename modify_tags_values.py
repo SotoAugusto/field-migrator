@@ -3,7 +3,7 @@
 # is supposed to be ran after move_fields.py
 import os
 import xml.etree.ElementTree as ET
-
+list_folders_to_iterate = ["fields", "lookup", "managed_packaged", "standard"]
 nameSpace = "http://soap.sforce.com/2006/04/metadata"
 ET.register_namespace("", nameSpace)
 start_directory = (
@@ -17,7 +17,7 @@ for root, dirs, files in os.walk(start_directory):
     # print("root: ", root)
     print("🚀current_folder_name: ", current_folder_name)
 
-    if current_folder_name not in {"fields", "lookup", "managed_packaged", "standard"}:
+    if current_folder_name not in list_folders_to_iterate:
         print(f"❌Inside incorrect folder {current_folder_name} skipping...")
         continue
 
@@ -31,6 +31,24 @@ for root, dirs, files in os.walk(start_directory):
 
         # delete __c.field-meta.xml
         filename_without__c = field[:-18]
+
+        # delete .field-meta.xml
+        filename_without_extension = field[:-15]
+
+        ## ! is standard field
+        if (
+            current_folder_name == "standard"
+            and not filename_without_extension.__contains__("__c")
+        ):
+
+            new_filename_standard_with__c = (
+                filename_without_extension + "__c.field-meta.xml"
+            )
+            os.rename(root + "/" + field, root + "/" + new_filename_standard_with__c)
+            field = new_filename_standard_with__c
+            print(
+                f"🟠{field}'s name has been updated to {new_filename_standard_with__c}"
+            )
 
         ## ! is managed_packaged
         if (
@@ -57,19 +75,77 @@ for root, dirs, files in os.walk(start_directory):
 
         #! iterate over the tag attributes of a file(field)
         for fieldAttribute in _root:
+
             # delete namespace to leave <tag> only
             xmlTagName = fieldAttribute.tag[41 : len(fieldAttribute.tag)]
 
+            ##! is standard field
+            # change fullname text to add __c
+            if current_folder_name == "standard":
+                # change fullname text to add __c
+                if xmlTagName == "fullName" and not fieldAttribute.text.__contains__(
+                    "__c"
+                ):
+                    fieldAttribute.text = field[:-15]
+
+                # add label tag and value
+                # find if label tag exists, returns None if it doesn't
+                contains_label_tag = _root.find(
+                    "{http://soap.sforce.com/2006/04/metadata}label"
+                )
+                if contains_label_tag is None:
+                    label_tag = ET.SubElement(
+                        _root, "{{{}}}{}".format(nameSpace, "label")
+                    )
+                    label_tag.text = field[:-15]
+
+                    # Create a namespace map
+                    nsmap = {"label": nameSpace}
+
+                    # Serialize the XML with the namespace map
+                    ET.tostring(_root, encoding="utf-8", xml_declaration=True)
+                    print(f"🟤<label> of {label_tag.text} has been added to {field}")
+
+                # if current_folder_name == "standard" and not _root.__contains__(type):
+                # find if <type> tag exists, returns None if it doesn't
+                contains_type_tag = _root.find(
+                    "{http://soap.sforce.com/2006/04/metadata}type"
+                )
+                if contains_type_tag is None:
+                    label_tag = ET.SubElement(
+                        _root, "{{{}}}{}".format(nameSpace, "type")
+                    )
+                    label_tag.text = "Text"
+
+                    # Create a namespace map
+                    nsmap = {"label": nameSpace}
+
+                    # Serialize the XML with the namespace map
+                    ET.tostring(_root, encoding="utf-8", xml_declaration=True)
+                    print(f"🟤<type> of {label_tag.text} has been added to {field}")
+
+                    # append <length> tag and value of 255
+                    length_tag = ET.SubElement(
+                        _root, "{{{}}}{}".format(nameSpace, "length")
+                    )
+                    length_tag.text = "255"
+
+                    # Create a namespace map
+                    nsmap = {"length": nameSpace}
+
+                    # Serialize the XML with the namespace map
+                    ET.tostring(_root, encoding="utf-8", xml_declaration=True)
+                    print(f"🟤<length> of 255 has been added to {field}")
+
             #! is managed_packaged
             # select tagName full name, take out __c, if it contains __ then change it to _
-            if xmlTagName == "fullName" and fieldAttribute.text[:-18].__contains__(
-                "__"
-            ):
-                fieldAttribute.text = new_filename_managed_package[:-15]
+            if xmlTagName == "fullName" and fieldAttribute.text[:-3].__contains__("__"):
+                fieldAttribute.text = field[:-15]
                 print(
                     f"🟧<fullName> tag for manage_packaged field {field} has been updated to {fieldAttribute.text}"
                 )
-                _tree.write(filePath, "UTF-8", True, nameSpace)
+                # ? save file
+                # _tree.write(filePath, "UTF-8", True, nameSpace)
 
             ##! trackhistory tag to false
 
@@ -100,8 +176,8 @@ for root, dirs, files in os.walk(start_directory):
                     # Serialize the XML with the namespace map
                     ET.tostring(_root, encoding="utf-8", xml_declaration=True)
                     print(f"🟤<length> of 255 has been added to {field}")
-                    # save
-                    # ? _tree.write(filePath, "UTF-8", True, nameSpace)
+                    # ? save
+                    # _tree.write(filePath, "UTF-8", True, nameSpace)
 
             ## deletes tags from lookup
 
@@ -117,7 +193,7 @@ for root, dirs, files in os.walk(start_directory):
                 # ? save
                 # _tree.write(filePath, "UTF-8", True, nameSpace)
 
-        # ? save file
+        # ? save file after all changes
         _tree.write(filePath, "UTF-8", True, nameSpace)
 
 ## formula will not be migrated
