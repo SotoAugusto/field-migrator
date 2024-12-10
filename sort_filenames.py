@@ -2,9 +2,10 @@ import os
 
 # Directory to search
 directory = "/Users/ausoto/code/na-salesforce/force-app/main/default/objects/Contact/fields"
+# directory = "/Users/ausoto/code/na-salesforce/force-app/main/default/objects/ContactArchive__c/fields"
 
 # Output file in the home directory
-output_file = os.path.expanduser("~/filenames.txt")
+output_file = os.path.expanduser("~/code/field-migrator/sorted_filenames.txt")
 
 # Find all files ending with 'field-meta.xml', remove that part, and save to the output file
 filenames = []

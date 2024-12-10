@@ -1,7 +1,6 @@
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
-
 def create_package_xml(fields_path):
     # Create the base package XML structure
     package = ET.Element("Package", xmlns="http://soap.sforce.com/2006/04/metadata")
@@ -26,7 +25,7 @@ def create_package_xml(fields_path):
 
     # Add API version
     version = ET.SubElement(package, "version")
-    version.text = "62.0"
+    version.text = "58.0"
 
     # Save with proper formatting
     xml_str = ET.tostring(package)
@@ -37,8 +36,7 @@ def create_package_xml(fields_path):
     with open("package.xml", "w") as f:
         f.write(pretty_xml)
 
-
 # Use your actual path
 fields_path = "/Users/ausoto/code/na-salesforce/force-app/main/default/objects/ContactArchive__c/fields"
 create_package_xml(fields_path)
-print("✅ package.xml created!")
+print("package.xml created!")
