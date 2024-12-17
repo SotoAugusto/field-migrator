@@ -109,6 +109,7 @@ for filename in os.listdir(profiles_dir):
         namespace = {"sf": "http://soap.sforce.com/2006/04/metadata"}
 
         modified = False
+        added_contact_archive_field = False
 
         # Find all readable field permissions for Contact using xpath
         contact_field_perms = root.xpath(
@@ -169,6 +170,63 @@ for filename in os.listdir(profiles_dir):
                     ".//sf:fieldPermissions[last()]", namespaces=namespace
                 )[0]
                 last_field_perm.addnext(new_field_perm)
+                modified = True
+                added_contact_archive_field = True
+
+        # Check if objectPermissions for ContactArchive__c exists
+        if added_contact_archive_field:
+            object_perm_exists = root.xpath(
+                './/sf:objectPermissions[sf:object="ContactArchive__c"]',
+                namespaces=namespace,
+            )
+            if not object_perm_exists:
+                # Create a new objectPermissions element
+                new_object_perm = etree.Element(
+                    "{http://soap.sforce.com/2006/04/metadata}objectPermissions"
+                )
+                allow_create_elem = etree.SubElement(
+                    new_object_perm,
+                    "{http://soap.sforce.com/2006/04/metadata}allowCreate",
+                )
+                allow_delete_elem = etree.SubElement(
+                    new_object_perm,
+                    "{http://soap.sforce.com/2006/04/metadata}allowDelete",
+                )
+                allow_edit_elem = etree.SubElement(
+                    new_object_perm,
+                    "{http://soap.sforce.com/2006/04/metadata}allowEdit",
+                )
+                allow_read_elem = etree.SubElement(
+                    new_object_perm,
+                    "{http://soap.sforce.com/2006/04/metadata}allowRead",
+                )
+                modify_all_records_elem = etree.SubElement(
+                    new_object_perm,
+                    "{http://soap.sforce.com/2006/04/metadata}modifyAllRecords",
+                )
+                object_elem = etree.SubElement(
+                    new_object_perm, "{http://soap.sforce.com/2006/04/metadata}object"
+                )
+                view_all_records_elem = etree.SubElement(
+                    new_object_perm,
+                    "{http://soap.sforce.com/2006/04/metadata}viewAllRecords",
+                )
+
+                # Set the values for the new objectPermissions
+                allow_create_elem.text = "false"
+                allow_delete_elem.text = "false"
+                allow_edit_elem.text = "false"
+                allow_read_elem.text = "true"
+                modify_all_records_elem.text = "false"
+                object_elem.text = "ContactArchive__c"
+                view_all_records_elem.text = "true"
+
+                # Format the new objectPermissions
+                etree.indent(new_object_perm, space="    ")
+                new_object_perm.tail = "\n"
+
+                # Insert the new objectPermissions before the closing </Profile> tag
+                root.insert(len(root), new_object_perm)
                 modified = True
 
         # Write changes if modified
