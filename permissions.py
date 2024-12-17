@@ -160,10 +160,15 @@ for filename in os.listdir(profiles_dir):
                 readable_elem.text = "true"  # Already filtered by readable
                 editable_elem.text = "false"
 
-                # Format and append the new fieldPermission
+                # Format the new fieldPermission
                 etree.indent(new_field_perm, space="    ")
                 new_field_perm.tail = "\n"
-                root.append(new_field_perm)
+
+                # Find the last fieldPermissions element and insert after it
+                last_field_perm = root.xpath(
+                    ".//sf:fieldPermissions[last()]", namespaces=namespace
+                )[0]
+                last_field_perm.addnext(new_field_perm)
                 modified = True
 
         # Write changes if modified
